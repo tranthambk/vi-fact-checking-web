@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<style>
+    #claim-input {
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  padding: 8px;
+  width: 60%;
+}
+    button[type="submit"] {
+  background-color: #4CAF50;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 10px 20px;
+  transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #3e8e41;
+}
+    #result-container {
+  max-height: 800px;
+  overflow-y: auto;
+}
+    h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li {
+border-bottom: 1px solid gray;
+padding-bottom: 10px;
+margin-bottom: 10px;
+}
+
+body {
+        font-family: helvetica, sans-serif;
+        line-height: 1.4;
+    }
+    </style>
+<head>
+    <meta charset="utf-8">
+    <title>Hệ Thống Kiểm Tra Tin Giả</title>
+</head>
+  <body>
+    <center>
+    <h1>Hệ Thống Kiểm Tra Tin Giả</h1>
+    <form id="search-form">
+      <p><input type="text" id="claim-input" name="claim"  placeholder="Nhập tin tức cần kiểm tra" style="width: 60%"> </p>
+      <button type="submit">Tìm kiếm</button>
+    </form>
+    <div id="status"></div>
+</center>
+
+    <div id="result-container"></div>
+
+    <script>
+      const form = document.querySelector('#search-form');
+      const resultContainer = document.querySelector('#result-container');
+      const status = document.querySelector('#status');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const claimInput = document.querySelector('#claim-input');
+        const claim = claimInput.value.trim();
+
+        if (claim) {
+          status.textContent = 'Hệ thống đang kiểm tra tin . . .';
+
+          const response = await fetch('/check_news/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: claim })
+          });
+
+          const result = await response.json();
+
+          const html = `
+            <h1>Kết quả kiểm tra tin giả</h1>
+            <p><strong>Claim:</strong> ${result.News}</p>
+            <p><strong>Final verdict:</strong>
+              ${result.final_verdict === 'Supports'
+                ? '<button style="background-color: green; color: white;"><i class="fas fa-check"></i> Supports</button>'
+                : result.final_verdict === 'Refutes'
+                ? '<button style="background-color: red; color: white;"><i class="fas fa-times"></i> Refutes</button>'
+                : '<button style="background-color: yellow;"><i class="fas fa-exclamation-triangle"></i> Neutral</button>'
+              }
+            </p>
+            <h2>Evidence:</h2>
+            <ul>
+              ${result.ls_evidence.map(evidence => `
+                <li>
+                  <p><strong>Claim sentence:</strong> ${evidence.claim_sentence}</p>
+                  <p><strong>Evidence sentence:</strong> ${evidence.evidence_sentence}</p>
+                  <p><strong>Label:</strong> ${evidence.label}</p>
+                </li>
+              `).join('')}
+            </ul>
+          `;
+
+          status.textContent = '';
+          resultContainer.innerHTML = html;
+        }
+      });
+    </script>
+  </body>
+</html>
